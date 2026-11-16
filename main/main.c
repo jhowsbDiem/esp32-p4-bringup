@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "teste_chip.h"
 #include "teste_psram.h"
+#include "teste_audio.h"
 
 static const char *TAG = "bringup";
 
@@ -17,6 +18,7 @@ static const teste_t testes[] = {
     { "chip", teste_chip_executar },
     { "psram", teste_psram_executar },
     { "psram_vel", teste_psram_velocidade_executar },
+    { "audio", teste_audio_executar },
 };
 
 void app_main(void)
