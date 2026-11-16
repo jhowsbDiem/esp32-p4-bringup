@@ -1,0 +1,7 @@
+CONFIG_IDF_TARGET="esp32p4"
+
+# O ESP32-P4NRW32 da placa é revisão v1.x. Sem esta opção o binário só aceita
+# chips v3.x e o bootloader recusa o boot.
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y

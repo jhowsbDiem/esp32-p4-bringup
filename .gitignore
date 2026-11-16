@@ -1,2 +1,8 @@
 # Planos e notas locais, nunca versionados
 notes/
+
+# Gerados pelo build do ESP-IDF
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
