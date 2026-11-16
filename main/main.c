@@ -16,6 +16,7 @@ typedef struct {
 static const teste_t testes[] = {
     { "chip", teste_chip_executar },
     { "psram", teste_psram_executar },
+    { "psram_vel", teste_psram_velocidade_executar },
 };
 
 void app_main(void)
