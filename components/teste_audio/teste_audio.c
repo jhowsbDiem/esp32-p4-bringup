@@ -1,8 +1,10 @@
 #include "teste_audio.h"
 
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "driver/i2c_master.h"
 #include "driver/i2s_std.h"
@@ -32,6 +34,25 @@
 // 16 bits.
 #define AUDIO_MCLK_DIV 256
 #define AUDIO_PA_GPIO 53
+
+#define AUDIO_TOM_HZ 1000
+#define AUDIO_TOM_MS 1000
+// O silêncio no final empurra o fim do tom para fora do DMA (cerca de 90 ms
+// enfileirados) antes de o codec fechar e desligar o amplificador. Sem ele, o
+// tom seria cortado no meio.
+#define AUDIO_SILENCIO_MS 100
+#define AUDIO_BLOCO_MS 10
+// O sinal digital fica com folga (8192 de 32767, cerca de -12 dBFS) para não
+// distorcer; quem dá a altura do som é o ganho do codec (0 a 100), ajustado
+// na bancada.
+#define AUDIO_VOLUME 90
+#define AUDIO_AMPLITUDE 8192
+#define AUDIO_FRAMES_POR_BLOCO (AUDIO_TAXA_HZ * AUDIO_BLOCO_MS / 1000)
+
+// Com períodos inteiros, o bloco se repete sem emenda e o tom começa e termina
+// no zero, sem estalo.
+_Static_assert((AUDIO_TOM_HZ * AUDIO_BLOCO_MS) % 1000 == 0,
+               "o bloco precisa conter um número inteiro de períodos do tom");
 
 static const char *TAG = "teste_audio";
 
@@ -245,6 +266,44 @@ static bool abrir_codec(audio_t *audio, uint16_t endereco)
     return true;
 }
 
+static bool tocar_tom(audio_t *audio)
+{
+    static int16_t bloco[AUDIO_FRAMES_POR_BLOCO * 2];
+
+    int resultado = esp_codec_dev_set_out_vol(audio->codec, AUDIO_VOLUME);
+    if (resultado != ESP_CODEC_DEV_OK) {
+        ESP_LOGE(TAG, "Falha ao ajustar o volume: erro %d", resultado);
+        return false;
+    }
+
+    for (int i = 0; i < AUDIO_FRAMES_POR_BLOCO; i++) {
+        int16_t amostra = (int16_t)lrintf(
+            AUDIO_AMPLITUDE * sinf(2.0f * (float)M_PI * AUDIO_TOM_HZ * i / AUDIO_TAXA_HZ));
+        bloco[2 * i] = amostra;
+        bloco[2 * i + 1] = amostra;
+    }
+
+    ESP_LOGI(TAG, "Tocando tom de %d Hz por %d ms (volume %d)", AUDIO_TOM_HZ, AUDIO_TOM_MS,
+             AUDIO_VOLUME);
+    for (int n = 0; n < AUDIO_TOM_MS / AUDIO_BLOCO_MS; n++) {
+        resultado = esp_codec_dev_write(audio->codec, bloco, sizeof(bloco));
+        if (resultado != ESP_CODEC_DEV_OK) {
+            ESP_LOGE(TAG, "Falha ao escrever no I2S: erro %d", resultado);
+            return false;
+        }
+    }
+
+    memset(bloco, 0, sizeof(bloco));
+    for (int n = 0; n < AUDIO_SILENCIO_MS / AUDIO_BLOCO_MS; n++) {
+        resultado = esp_codec_dev_write(audio->codec, bloco, sizeof(bloco));
+        if (resultado != ESP_CODEC_DEV_OK) {
+            ESP_LOGE(TAG, "Falha ao escrever no I2S: erro %d", resultado);
+            return false;
+        }
+    }
+    return true;
+}
+
 static void desabilitar_canal(i2s_chan_handle_t canal)
 {
     // O esp_codec_dev já desabilita os canais ao fechar o codec; desabilitar de
@@ -290,7 +349,8 @@ bool teste_audio_executar(void)
     audio_t audio = { 0 };
     uint16_t endereco = 0;
     bool ok = criar_barramento(&audio) && detectar_codec(audio.barramento, &endereco)
-              && criar_i2s(&audio) && abrir_codec(&audio, endereco);
+              && criar_i2s(&audio) && abrir_codec(&audio, endereco)
+              && tocar_tom(&audio);
     liberar_audio(&audio);
     return ok;
 }
