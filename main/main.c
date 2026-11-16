@@ -3,6 +3,7 @@
 
 #include "esp_log.h"
 #include "teste_chip.h"
+#include "teste_psram.h"
 
 static const char *TAG = "bringup";
 
@@ -14,6 +15,7 @@ typedef struct {
 // Novos testes entram só como uma linha a mais nesta tabela.
 static const teste_t testes[] = {
     { "chip", teste_chip_executar },
+    { "psram", teste_psram_executar },
 };
 
 void app_main(void)

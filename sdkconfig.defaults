@@ -5,3 +5,10 @@ CONFIG_IDF_TARGET="esp32p4"
 CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
 
 CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+
+# A PSRAM de 32 MB vem integrada ao ESP32-P4NRW32, mas o ESP-IDF a deixa
+# desligada por padrão.
+CONFIG_SPIRAM=y
+
+# 200 MHz é a maior velocidade da PSRAM para chips v1.x; 250 MHz exige v3.x.
+CONFIG_SPIRAM_SPEED_200M=y
