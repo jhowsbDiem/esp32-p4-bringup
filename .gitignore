@@ -6,3 +6,6 @@ build/
 sdkconfig
 sdkconfig.old
 managed_components/
+
+# Configuração local do editor
+.vscode/
