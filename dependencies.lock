@@ -15,6 +15,6 @@ dependencies:
     version: 6.1.0
 direct_dependencies:
 - espressif/esp_codec_dev
-manifest_hash: cd384cb3b70602bf485f1a1d2ab143798010eea8d86fef35f40122485f8c23a8
+manifest_hash: 5279dfeaecb55debc7bc67978c9f89d4e3a5da033fe60b3b70232c04adc58e15
 target: esp32p4
 version: 3.0.0
